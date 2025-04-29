@@ -11,7 +11,7 @@ processes: list[MarkovProcess] = [
     ItoProcess.from_equation('X1', 'dX = (0.02 * X) * dWt'),
 ]
 s = simulate(
-    method='euler',
+    method='rk2',
     processes=processes,
     start_values=[1.0] * len(processes),
     time_steps=(range(1_000)),

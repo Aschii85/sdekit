@@ -10,14 +10,14 @@ from sdekit.process.ito import ItoProcess
 
 def simulate(
     *,
-    method: Literal['euler', 'milstein'] = 'euler',
+    method: Literal['euler', 'rk2'] = 'euler',
     processes: Sequence[MarkovProcess],
     start_values: Sequence[float], # Make into special class with labels, since confusion may arise?
     time_steps: Sequence[float],
     scenarios: int = 1_000,
     wiener_correlations: np.ndarray | None = None, # Make into special class with labels, since confusion may arise?
 ) -> Filtration:
-    """Simulate scenarios using the Euler-Maruyama or Milstein Schemes scheme."""
+    """Simulate scenarios using the Euler-Maruyama or 2nd Order Runge-Kutta 2nd schemes."""
     if method == 'milstein' and not all(isinstance(p, ItoProcess) for p in processes):
         raise RuntimeError
     if len(processes) != len(start_values):
@@ -32,10 +32,10 @@ def simulate(
         start_vals[0, idx,:] = val
     state = Filtration([0] + time_steps, processes, start_vals)
     for prev, next in zip([0] + time_steps[:-1], time_steps, strict=True):
-        if method == 'milstein':
+        if method == 'rk2':
             next_values = np.array(
                     [
-                        _next_scenario_values_milstein(processes, state, prev, next)
+                        _next_scenario_values_rk2(processes, state, prev, next)
                     ]
                 )
         else:
@@ -66,12 +66,13 @@ def _next_scenario_values_euler(
         res += c_eval * inc.scenarios(t0, t1)
     return res
 
-def _next_scenario_values_milstein(
+def _next_scenario_values_rk2(
     processes: Sequence[ItoProcess],
     state: Filtration,
     t0: float,
     t1: float,
 ) -> np.ndarray:
+    """Claculate next scenario values using Runge-Kutta 2nd order scheme, developed by Rößler."""
     dt = t1 - t0
     dW = np.zeros((len(processes), WienerIncrementor._num_scenarios))
     for idx, process in enumerate(processes):
