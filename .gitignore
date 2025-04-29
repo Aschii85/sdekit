@@ -3,3 +3,9 @@
 
 # Pycaches
 __pycache__
+
+# Zed settings
+.zed/
+
+# UV lock
+uv.lock
